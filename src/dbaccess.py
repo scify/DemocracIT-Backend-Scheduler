@@ -40,7 +40,7 @@ class DBAccess:
         """
         # backup (pycharm no see getenv)
         # read from file (TODO add settings file to gitignore)
-        with open("settings.properties", 'r') as f:
+        with open("../settings.properties", 'r') as f:
             settings = f.readlines()
 
         if not db_host:
@@ -56,7 +56,6 @@ class DBAccess:
         else:
             self.db_pw = db_pw
 
-
     def get_consultation_ids(self):
         """
         return a list of consultation IDs
@@ -67,8 +66,13 @@ class DBAccess:
             con = self.get_connection()
             # get a cursor
             cur = con.cursor()
-            # query db
-            cur.execute("SELECT id FROM consultation ORDER BY id DESC LIMIT 2;")
+            # query db (get consultations that contain comments)
+            cur.execute(
+                "SELECT distinct(consultation.id) "
+                "FROM consultation "
+                "INNER JOIN articles ON articles.consultation_id = consultation.id "
+                "INNER JOIN comments ON comments.article_id = articles.id "
+                "ORDER BY consultation.id DESC;")
             # get all results at once
             consultations = cur.fetchall()
             # get a set of all the consultation IDs
