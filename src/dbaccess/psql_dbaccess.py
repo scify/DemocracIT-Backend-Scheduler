@@ -10,6 +10,7 @@ sudo pip install psycopg2
     and then rerun
     sudo pip install psycopg2
 """
+
 __author__ = 'George Kiomourtzis <gkiom@iit.demokritos.gr>'
 
 import sys
@@ -36,7 +37,7 @@ class DBAccess:
     def _get_variables(self, db_host, db_user, db_pw):
         """
         get the variables, if none, from file (backup)
-        file lines must be in the order of db_host, db_user, db_pw :-)
+        file lines must be in the order of db_host, db_user, db_pw - it's silly, i know:-)
         """
         # backup (pycharm no see getenv)
         # read from file (TODO add settings file to gitignore)
@@ -56,9 +57,41 @@ class DBAccess:
         else:
             self.db_pw = db_pw
 
-    def get_consultation_ids(self):
+    def get_consultation_ids(self, prev_comment_id):
         """
-        return a list of consultation IDs
+        return a set of consultation IDs
+        """
+        con = None
+        try:
+            # get a db connection
+            con = self.get_connection()
+            # get a cursor
+            cur = con.cursor()
+            # query db (get consultations required)
+            cur.execute(
+                "SELECT distinct(consultation.id) "
+                "FROM consultation "
+                "INNER JOIN articles ON articles.consultation_id = consultation.id "
+                "INNER JOIN comments ON comments.article_id = articles.id "
+                "WHERE comments.id > ?"
+                "ORDER BY consultation.id DESC;", prev_comment_id)
+            # get all results at once
+            consultations = cur.fetchall()
+            # get a set of all the consultation IDs
+            return {each[0] for each in consultations if isinstance(each, tuple)}
+        except psycopg2.DatabaseError, e:
+            if con:
+                con.rollback()
+            print 'Error %s' % e
+            sys.exit(1)
+        finally:
+            if con:
+                con.close()
+
+    def get_latest_comment_id(self):  # TODO: get latest comment id saved by the crawlers last run
+        """
+        return the latest comment inserted by the crawler
+        call this before crawler initiation
         """
         con = None
         try:
@@ -67,23 +100,15 @@ class DBAccess:
             # get a cursor
             cur = con.cursor()
             # query db (get consultations that contain comments)
-            cur.execute(
-                "SELECT distinct(consultation.id) "
-                "FROM consultation "
-                "INNER JOIN articles ON articles.consultation_id = consultation.id "
-                "INNER JOIN comments ON comments.article_id = articles.id "
-                "ORDER BY consultation.id DESC;")
+            cur.execute("SELECT id from comments ORDER BY id DESC LIMIT 1;")
             # get all results at once
-            consultations = cur.fetchall()
+            prev_comment = cur.fetchOne()
             # get a set of all the consultation IDs
-            self.ids_in_db = {each[0] for each in consultations if isinstance(each, tuple)}
-            # respond
-            return self.ids_in_db
+            return prev_comment
         except psycopg2.DatabaseError, e:
             if con:
                 con.rollback()
             print 'Error %s' % e
-            sys.exit(1)
         finally:
             if con:
                 con.close()
