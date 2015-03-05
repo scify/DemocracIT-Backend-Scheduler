@@ -1,0 +1,83 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+
+__author__ = 'George K. <gkiom@scify.org>'
+
+from src.dbaccess.models import Schedule, Base
+
+import sqlite3
+from datetime import datetime
+
+
+class LocalDBAccess():
+    db_name = ""
+
+    def __init__(self, db_name=None):
+        """
+        :type db_name: String
+        """
+        if not db_name:
+            self.db_name = "democracit"
+        else:
+            self.db_name = db_name
+        self._init_tables()
+
+    def _schedule_initialized(self):
+        """ add a record to the DB to show that schedule is initialized
+        """
+        init_time_repr = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        schedule = Schedule(1, self.total_steps, init_time_repr)
+        print 'initiated new %s' % schedule
+
+    def schedule_step(self, step_num, date_end=None):
+        """ add a record to the DB to show that schedule is initialized
+        """
+        if step_num == 1:
+            return self._schedule_initialized()
+        # else proceed
+        init_time_repr = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        if not date_end:
+            schedule = Schedule(step_num, self.total_steps, init_time_repr)
+        else:
+            end_time_repr = datetime.strftime(date_end, '%Y-%m-%d %H:%M:%S')
+            schedule = Schedule(step_num, self.total_steps, init_time_repr, end_time_repr)
+        print 'step up %s' % schedule
+
+    def get_connection(self):
+        con = None
+        try:
+            con = sqlite3.connect(self.db_name)
+            return con
+        except sqlite3.Error, e:
+            if con:
+                con.rollback()
+            print 'Error %s' % e
+
+    def _init_tables(self):
+        con = None
+        try:
+            self.db = create_engine('sqlite:///' + self.db_name)
+            Base.metadata.create_all(self.db)
+            # get a db connection
+            con = self.get_connection()
+            # get a cursor
+            cur = con.cursor()
+            # query db (get latest comment ID)
+            cur.execute("SELECT last_comment_id FROM comment_ids LIMIT 1;")
+            print cur.fetchone()
+        except SQLAlchemyError, e:
+            if con:
+                con.rollback()
+            print 'Error %s' % e
+        finally:
+            if con:
+                con.close()
+
+
+if __name__ == "__main__":
+    dba = LocalDBAccess()
+    print dba._init_tables()
+    # for each in dba.get_latest_comment_id():
+    # print each, type(each)

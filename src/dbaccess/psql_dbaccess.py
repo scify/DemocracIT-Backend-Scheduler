@@ -11,7 +11,7 @@ sudo pip install psycopg2
     sudo pip install psycopg2
 """
 
-__author__ = 'George Kiomourtzis <gkiom@iit.demokritos.gr>'
+__author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 import sys
 import os
@@ -19,7 +19,7 @@ import os
 import psycopg2
 
 
-class DBAccess:
+class PSQLDBAccess:
     ids_in_db = {}  # the ids to get
     db_host = ""
     db_user = ""
@@ -33,6 +33,52 @@ class DBAccess:
             self.db_name = db_name
         # get variables
         self._get_variables(db_host, db_user, db_pw)
+
+    def get_updated_consultations(self, prev_comment_id):
+        """
+        get a set of consultations to run
+        """
+        return self._get_consultation_ids_after(prev_comment_id)
+
+    def get_latest_comment_id(self):
+        """
+        return the latest comment inserted by the crawler
+        call this before crawler initiation
+        """
+        con = None
+        try:
+            # get a db connection
+            con = self.get_connection()
+            # get a cursor
+            cur = con.cursor()
+            # query db (get latest comment ID)
+            cur.execute("SELECT id from comments ORDER BY id DESC LIMIT 1;")
+            # get results
+            prev_comment = cur.fetchall()
+            # get response
+            return prev_comment[0][0] if isinstance(prev_comment, list) else prev_comment[0] \
+                if isinstance(prev_comment, tuple) else prev_comment
+        except psycopg2.DatabaseError, e:
+            if con:
+                con.rollback()
+            print 'Error %s' % e
+        finally:
+            if con:
+                con.close()
+
+    def get_connection(self):
+        con = None
+        try:
+            con = psycopg2.connect(host=os.getenv("democracit_db_host", self.db_host),
+                                   dbname=self.db_name,
+                                   user=os.getenv("democracit_db_user", self.db_user),
+                                   password=os.getenv("democracit_db_pw", self.db_pw))
+            return con
+        except psycopg2.DatabaseError, e:
+            if con:
+                con.rollback()
+            print 'Error %s' % e
+            sys.exit(1)
 
     def _get_variables(self, db_host, db_user, db_pw):
         """
@@ -57,7 +103,7 @@ class DBAccess:
         else:
             self.db_pw = db_pw
 
-    def get_consultation_ids(self, prev_comment_id):
+    def _get_consultation_ids_after(self, prev_comment_id):
         """
         return a set of consultation IDs
         """
@@ -73,8 +119,8 @@ class DBAccess:
                 "FROM consultation "
                 "INNER JOIN articles ON articles.consultation_id = consultation.id "
                 "INNER JOIN comments ON comments.article_id = articles.id "
-                "WHERE comments.id > ?"
-                "ORDER BY consultation.id DESC;", prev_comment_id)
+                "WHERE comments.id > %s "
+                "ORDER BY consultation.id DESC;", (prev_comment_id,))
             # get all results at once
             consultations = cur.fetchall()
             # get a set of all the consultation IDs
@@ -88,47 +134,8 @@ class DBAccess:
             if con:
                 con.close()
 
-    def get_latest_comment_id(self):  # TODO: get latest comment id saved by the crawlers last run
-        """
-        return the latest comment inserted by the crawler
-        call this before crawler initiation
-        """
-        con = None
-        try:
-            # get a db connection
-            con = self.get_connection()
-            # get a cursor
-            cur = con.cursor()
-            # query db (get consultations that contain comments)
-            cur.execute("SELECT id from comments ORDER BY id DESC LIMIT 1;")
-            # get all results at once
-            prev_comment = cur.fetchOne()
-            # get a set of all the consultation IDs
-            return prev_comment
-        except psycopg2.DatabaseError, e:
-            if con:
-                con.rollback()
-            print 'Error %s' % e
-        finally:
-            if con:
-                con.close()
-
-    def get_connection(self):
-        con = None
-        try:
-            con = psycopg2.connect(host=os.getenv("democracit_db_host", self.db_host),
-                                   dbname=self.db_name,
-                                   user=os.getenv("democracit_db_user", self.db_user),
-                                   password=os.getenv("democracit_db_pw", self.db_pw))
-            return con
-        except psycopg2.DatabaseError, e:
-            if con:
-                con.rollback()
-            print 'Error %s' % e
-            sys.exit(1)
-
 
 if __name__ == "__main__":
-    dba = DBAccess()
-    for each in dba.get_consultation_ids():
-        print each, type(each)
+    dba = PSQLDBAccess()
+    # for each in dba.get_consultation_ids_after():
+    # print each, type(each)
