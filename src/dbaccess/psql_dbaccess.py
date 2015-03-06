@@ -15,12 +15,12 @@ __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 import sys
 import os
-
 import psycopg2
+import traceback
+import logging
 
 
 class PSQLDBAccess:
-    ids_in_db = {}  # the ids to get
     db_host = ""
     db_user = ""
     db_pw = ""
@@ -52,7 +52,7 @@ class PSQLDBAccess:
             # get a cursor
             cur = con.cursor()
             # query db (get latest comment ID)
-            cur.execute("SELECT id from comments ORDER BY id DESC LIMIT 1;")
+            cur.execute_pipeline("SELECT id from comments ORDER BY id DESC LIMIT 1;")
             # get results
             prev_comment = cur.fetchall()
             # get response
@@ -61,7 +61,7 @@ class PSQLDBAccess:
         except psycopg2.DatabaseError, e:
             if con:
                 con.rollback()
-            print 'Error %s' % e
+            print 'Exception: %s :\n %s' % (e, traceback.format_exc())
         finally:
             if con:
                 con.close()
@@ -77,7 +77,7 @@ class PSQLDBAccess:
         except psycopg2.DatabaseError, e:
             if con:
                 con.rollback()
-            print 'Error %s' % e
+            print 'Exception: %s :\n %s' % (e, traceback.format_exc())
             sys.exit(1)
 
     def _get_variables(self, db_host, db_user, db_pw):
@@ -87,21 +87,25 @@ class PSQLDBAccess:
         """
         # backup (pycharm no see getenv)
         # read from file (TODO add settings file to gitignore)
-        with open("../settings.properties", 'r') as f:
-            settings = f.readlines()
+        try:
+            with open("../../settings.properties", 'r') as f:
+                settings = f.readlines()
 
-        if not db_host:
-            self.db_host = settings[0].split("=")[1].strip()
-        else:
-            self.db_host = db_host
-        if not db_user:
-            self.db_user = settings[1].split("=")[1].strip()
-        else:
-            self.db_user = db_user
-        if not db_pw:
-            self.db_pw = settings[2].split("=")[1].strip()
-        else:
-            self.db_pw = db_pw
+            if not db_host:
+                self.db_host = settings[0].split("=")[1].strip()
+            else:
+                self.db_host = db_host
+            if not db_user:
+                self.db_user = settings[1].split("=")[1].strip()
+            else:
+                self.db_user = db_user
+            if not db_pw:
+                self.db_pw = settings[2].split("=")[1].strip()
+            else:
+                self.db_pw = db_pw
+        except Exception, e:
+            print 'Exception: %s :\n %s' % (e, traceback.format_exc())
+
 
     def _get_consultation_ids_after(self, prev_comment_id):
         """
@@ -114,7 +118,7 @@ class PSQLDBAccess:
             # get a cursor
             cur = con.cursor()
             # query db (get consultations required)
-            cur.execute(
+            cur.execute_pipeline(
                 "SELECT distinct(consultation.id) "
                 "FROM consultation "
                 "INNER JOIN articles ON articles.consultation_id = consultation.id "
@@ -128,7 +132,7 @@ class PSQLDBAccess:
         except psycopg2.DatabaseError, e:
             if con:
                 con.rollback()
-            print 'Error %s' % e
+            print 'Exception: %s :\n %s' % (e, traceback.format_exc())
             sys.exit(1)
         finally:
             if con:
