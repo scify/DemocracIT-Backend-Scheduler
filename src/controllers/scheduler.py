@@ -15,7 +15,7 @@ CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
 CRAWL_CONFIG_FILE_PATH = "./crawler.properties"
 JAVA_NAME = "OpenGovCrawler.jar"
 SOLR_INDEX_URL = "http://localhost:8983/solr/dataimport?command=delta-import"
-WORDCLOUD_URL = "http://localhost:8084/WordCloud/Extractor"
+WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
 
 
 class Scheduler:
