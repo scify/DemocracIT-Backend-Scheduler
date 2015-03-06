@@ -119,7 +119,7 @@ class PSQLDBAccess:
             # get a cursor
             cur = con.cursor()
             # query db (get consultations required)
-            cur.execute_pipeline(
+            cur.execute(
                 "SELECT distinct(consultation.id) "
                 "FROM consultation "
                 "INNER JOIN articles ON articles.consultation_id = consultation.id "
