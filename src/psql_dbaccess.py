@@ -32,7 +32,8 @@ class PSQLDBAccess:
         else:
             self.db_name = db_name
         # get variables
-        self._get_variables(db_host, db_user, db_pw)
+            # TODO UNCOMMENT LOCALLY!
+            # self._get_variables(db_host, db_user, db_pw)
 
     def get_updated_consultations(self, prev_comment_id):
         """
