@@ -15,9 +15,9 @@ __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 import sys
 import os
-import psycopg2
 import traceback
-import logging
+
+import psycopg2
 
 
 class PSQLDBAccess:
@@ -52,7 +52,7 @@ class PSQLDBAccess:
             # get a cursor
             cur = con.cursor()
             # query db (get latest comment ID)
-            cur.execute_pipeline("SELECT id from comments ORDER BY id DESC LIMIT 1;")
+            cur.execute("SELECT id from comments ORDER BY id DESC LIMIT 1;")
             # get results
             prev_comment = cur.fetchall()
             # get response
