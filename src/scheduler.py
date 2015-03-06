@@ -12,7 +12,7 @@ import traceback
 import requests
 
 CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
-CRAWL_CONFIG_FILE_PATH = "./crawler.properties"
+CRAWL_CONFIG_FILE_PATH = "/home/ubuntu/crawler/config.properties"
 JAVA_NAME = "OpenGovCrawler.jar"
 SOLR_INDEX_URL = "http://localhost:8983/solr/dataimport?command=delta-import"
 WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
@@ -24,11 +24,13 @@ class Scheduler:
     total = 0  # total controllers
     results = {} # results of each module, if any
 
+
     def __init__(self):
         # init storage
         self.psql = PSQLDBAccess()
         # init logger
         self.logger = DITLogger()
+        self.prev_comment_id = 0
 
     def get_modules(self):
         # possibly read controllers dir and fetch a list of file names (except init)
