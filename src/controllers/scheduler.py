@@ -27,7 +27,6 @@ class Scheduler:
     def __init__(self):
         # init storage
         self.psql = PSQLDBAccess()
-        self.local = LocalDBAccess()
         # init logger
         self.logger = DITLogger()
 
