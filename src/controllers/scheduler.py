@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from src.dbaccess.local_dbaccess import LocalDBAccess
+
 from src.dbaccess.psql_dbaccess import PSQLDBAccess
 from src.logging.ditLogger import DITLogger
 

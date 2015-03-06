@@ -11,7 +11,7 @@ import sqlite3
 from datetime import datetime
 import traceback
 
-class LocalDBAccess():
+class LocalDBAccess:
     db_name = ""
 
     def __init__(self, db_name=None):
