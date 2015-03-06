@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from src.dbaccess.psql_dbaccess import PSQLDBAccess
-from src.logging.ditLogger import DITLogger
+from psql_dbaccess import PSQLDBAccess
+from ditLogger import DITLogger
 
 __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 

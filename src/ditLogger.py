@@ -3,7 +3,9 @@
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
-from src.dbaccess.models import Schedule
+
+from models import Schedule
+
 
 __author__ = 'George K. <gkiom@scify.org>'
 

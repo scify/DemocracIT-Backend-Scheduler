@@ -88,7 +88,7 @@ class PSQLDBAccess:
         # backup (pycharm no see getenv)
         # read from file (TODO add settings file to gitignore)
         try:
-            with open("../../settings.properties", 'r') as f:
+            with open("../settings.properties", 'r') as f:
                 settings = f.readlines()
 
             if not db_host:

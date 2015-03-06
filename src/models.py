@@ -4,7 +4,7 @@
 __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy import Column, Integer, Date, ForeignKey
 
 Base = declarative_base()
 

@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 __author__ = 'George K. <gkiom@scify.org>'
 
-from src.dbaccess.models import Schedule, Base
+from models import Schedule, Base
 
 import sqlite3
 from datetime import datetime
