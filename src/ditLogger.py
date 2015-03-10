@@ -4,13 +4,10 @@ from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
 
-from models import Schedule
+from src.models import Schedule
 
 
 __author__ = 'George K. <gkiom@scify.org>'
-
-
-LOG = "../../schedule.log"
 
 
 class DITLogger:
@@ -21,7 +18,7 @@ class DITLogger:
         def __init__(self, level=None, filename=None):
             formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
             self.logger = logging.getLogger("DIT")
-            self.logfile = filename if filename else LOG
+            self.logfile = filename
             self.level = level if level else logging.DEBUG
             self.logger.setLevel(self.level)
             handler = RotatingFileHandler(self.logfile, maxBytes=1048576, backupCount=10)  # set to 1MB per file
