@@ -20,8 +20,8 @@ CRAWLER_JAVA_NAME = "OpenGovCrawler.jar"
 SOLR_INDEX_URLS = \
     ["http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true",
      "http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true"]
-# TODO add articles also
-# SOLR_INDEX_URL = ["http://localhost:8983/solr/dataimport?command=delta-import"]  # currently cannot get it to work
+# SOLR_INDEX_URL = ["http://localhost:8983/solr/dataimport?command=delta-import"]  
+# currently cannot get delta-import to work
 WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
 LOG_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/scheduler.log"
 
