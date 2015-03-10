@@ -17,7 +17,9 @@ from ditLogger import DITLogger
 CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
 CRAWL_CONFIG_FILE_PATH = "/home/ubuntu/crawler/config.properties"
 CRAWLER_JAVA_NAME = "OpenGovCrawler.jar"
-SOLR_INDEX_URLS = ["http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true"]
+SOLR_INDEX_URLS = \
+    ["http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true",
+     "http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true"]
 # TODO add articles also
 # SOLR_INDEX_URL = ["http://localhost:8983/solr/dataimport?command=delta-import"]  # currently cannot get it to work
 WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
