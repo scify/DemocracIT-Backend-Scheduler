@@ -16,7 +16,7 @@ from ditLogger import DITLogger
 
 
 # CRAWL_DIR_NAME = "/home/gkioumis/Downloads/"
-CRAWL_DIR_NAME = "/home/ubuntu/crawler"
+CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
 CRAWL_CONFIG_FILE_PATH = CRAWL_DIR_NAME + "config.properties"
 CRAWLER_JAVA_NAME = "OpenGovCrawler.jar"
 SOLR_INDEX_URLS = \
