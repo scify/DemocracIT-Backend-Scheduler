@@ -28,8 +28,11 @@ class DITLogger:
         def info(self, message):
             self.logger.info(message)
 
-        def error(self, message, ex=None):
-            self.logger.critical(message, ex)
+        def exception(self, ex):
+            self.logger.exception(ex)
+
+        def error(self, message):
+            self.logger.error(message)
 
         def warn(self, message):
             self.logger.warn(message)

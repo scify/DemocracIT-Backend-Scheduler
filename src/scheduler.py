@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from datetime import datetime
 
 
 __author__ = 'George K. <gkiom@iit.demokritos.gr>'
@@ -64,7 +65,7 @@ class Scheduler:
             self._execute_controller(step, controller)
 
         # finalized
-        self.logger.info("Finalized schedule successfully at ")
+        self.logger.schedule_step(step_num=step, total_steps=self.total, date_end=datetime.now())
 
     def _execute_controller(self, step, controller):
         # log step
@@ -97,8 +98,8 @@ class ControllerCrawl(Scheduler):
             subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             # return the consultations updated by the crawler
             return self.psql.get_updated_consultations(self.prev_comment_id)
-        except OSError, er:
-            self.logger.error('Exception: %s :\n %s' % (er, traceback.format_exc()))
+        except Exception, ex:
+            self.logger.exception(ex)
 
 
 class ControllerIndex(Scheduler):
@@ -115,9 +116,13 @@ class ControllerIndex(Scheduler):
         """
         for eachURL in self.urls:
             self.logger.info('executing import on comments table: calling %s' % eachURL)
-            r = requests.get(eachURL)
-            response = r.status_code
-            self.logger.info("import completed with response code: %d " % response)
+            # try:
+            try:
+                r = requests.get(eachURL)
+                response = r.status_code
+                self.logger.info("import completed with response code: %d " % response)
+            except Exception, ex:
+                self.logger.exception(ex)
 
 
 class ControllerWordCloud(Scheduler):
@@ -162,8 +167,12 @@ class ControllerWordCloud(Scheduler):
         :return the status_code response of the request
         """
         self.logger.info("Calling word cloud extractor for consultation %d" % cons)
-        r = requests.get(self.url + "?consultation_id=%d" % cons)
-        return r.status_code
+        try:
+            r = requests.get(self.url + "?consultation_id=%d" % cons)
+            return r.status_code
+        except Exception, ex:
+            self.logger.exception(ex)
+            return 503  # service unavailable
 
 
 if __name__ == "__main__":
