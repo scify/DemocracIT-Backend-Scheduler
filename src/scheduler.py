@@ -14,7 +14,7 @@ from psql_dbaccess import PSQLDBAccess
 from ditLogger import DITLogger
 
 
-CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
+CRAWL_DIR_NAME = "/home/gkioumis/Downloads/"
 CRAWL_CONFIG_FILE_PATH = "/home/ubuntu/crawler/config.properties"
 CRAWLER_JAVA_NAME = "OpenGovCrawler.jar"
 SOLR_INDEX_URLS = \
@@ -91,18 +91,19 @@ class ControllerCrawl(Scheduler):
         """
         try:
             # return [3451, 3452]
+            print os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
-
+            print os.getcwd()
             subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             # return the consultations updated by the crawler
             return self.psql.get_updated_consultations(self.prev_comment_id)
-        except OSError, e:
-            self.logger.error('Exception: %s :\n %s' % (e, traceback.format_exc()))
+        except OSError, er:
+            self.logger.error('Exception: %s :\n %s' % (er, traceback.format_exc()))
 
 
 class ControllerIndex(Scheduler):
     def __init__(self, urls=None):
-        self.urls = urls if urls else ["http://localhost:8089/solr/etc"]
+        self.urls = urls if urls else ["http://localhost:8983/solr/dit_comments/etc"]
         Scheduler.__init__(self)
 
     def __repr__(self):
@@ -113,7 +114,7 @@ class ControllerIndex(Scheduler):
         :return: None
         """
         for eachURL in self.urls:
-            self.logger.info('executing delta import on comments table: calling %s' % eachURL)
+            self.logger.info('executing import on comments table: calling %s' % eachURL)
             r = requests.get(eachURL)
             response = r.status_code
             self.logger.info("import completed with response code: %d " % response)

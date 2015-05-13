@@ -70,10 +70,10 @@ class PSQLDBAccess:
     def get_connection(self):
         con = None
         try:
-            con = psycopg2.connect(host=os.getenv("democracit_db_host", self.db_host),
+            con = psycopg2.connect(host=os.getenv("democracit_db_host", "democracit.caijkvjiftca.eu-west-1.rds.amazonaws.com"),
                                    dbname=self.db_name,
-                                   user=os.getenv("democracit_db_user", self.db_user),
-                                   password=os.getenv("democracit_db_pw", self.db_pw))
+                                   user=os.getenv("democracit_db_user", "democracit_backend"),
+                                   password=os.getenv("democracit_db_pw", "d3m0cr!!it"))
             return con
         except psycopg2.DatabaseError, e:
             if con:
