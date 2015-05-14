@@ -94,14 +94,15 @@ class ControllerCrawl(Scheduler):
         :return the list of consultations updated with new comments
         """
         try:
-            return [3451]
+            # return [3451]
             # return [3451, 3452]
             # cur_work_dir = os.getcwd()
             # os.chdir(os.path.dirname(self.dir_name))
             # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             # os.chdir(cur_work_dir)
-            # # return the consultations updated by the crawler
+            # return the consultations updated by the crawler
             # return self.psql.get_updated_consultations(self.prev_comment_id)
+            return self.psql.get_updated_consultations(328433)
         except Exception, ex:
             self.logger.exception(ex)
 
