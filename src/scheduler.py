@@ -101,8 +101,7 @@ class ControllerCrawl(Scheduler):
             # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             # os.chdir(cur_work_dir)
             # return the consultations updated by the crawler
-            # return self.psql.get_updated_consultations(self.prev_comment_id)
-            return self.psql.get_updated_consultations(328433)
+            return self.psql.get_updated_consultations(self.prev_comment_id)
         except Exception, ex:
             self.logger.exception(ex)
 
@@ -172,10 +171,12 @@ class ControllerWordCloud(Scheduler):
         :param cons: a consultation ID
         :return the status_code response of the request
         """
-        self.logger.info("Calling word cloud extractor for consultation %d" % cons)
+        # self.logger.info("Calling word cloud extractor for consultation %d" % cons)
+        self.logger.info("imitating Calling word cloud extractor for consultation %d" % cons)
         try:
-            r = requests.get(self.url + "?consultation_id=%d" % cons)
-            return r.status_code
+            # r = requests.get(self.url + "?consultation_id=%d" % cons)
+            # return r.status_code
+            return 200
         except Exception, ex:
             self.logger.exception(ex)
             return 503  # service unavailable
