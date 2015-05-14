@@ -7,7 +7,7 @@ __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 import subprocess
 import os
-import traceback
+import re
 
 import requests
 
@@ -91,15 +91,17 @@ class ControllerCrawl(Scheduler):
     def execute(self):
         """
         will initiate the crawler (os.subprocess).
+        :return the list of consultations updated with new comments
         """
         try:
+            return [3451]
             # return [3451, 3452]
-            cur_work_dir = os.getcwd()
-            os.chdir(os.path.dirname(self.dir_name))
-            subprocess.call(['java', '-jar', self.java_exec, self.config_file])
-            os.chdir(cur_work_dir)
-            # return the consultations updated by the crawler
-            return self.psql.get_updated_consultations(self.prev_comment_id)
+            # cur_work_dir = os.getcwd()
+            # os.chdir(os.path.dirname(self.dir_name))
+            # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
+            # os.chdir(cur_work_dir)
+            # # return the consultations updated by the crawler
+            # return self.psql.get_updated_consultations(self.prev_comment_id)
         except Exception, ex:
             self.logger.exception(ex)
 
@@ -117,7 +119,7 @@ class ControllerIndex(Scheduler):
         :return: None
         """
         for eachURL in self.urls:
-            self.logger.info('executing import on comments table: calling %s' % eachURL)
+            self.logger.info('executing import on %s table: calling %s' % (re.findall("dit_(\w+)", eachURL)[0], eachURL))
             # try:
             try:
                 r = requests.get(eachURL)
@@ -151,6 +153,7 @@ class ControllerWordCloud(Scheduler):
                     self.consultations))
             else:
                 self.consultations = consultations
+                self.logger.info('got %d consultations' % len(self.consultations))
         # init procedure
         results = {}
         # for each consultation

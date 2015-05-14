@@ -33,7 +33,7 @@ class PSQLDBAccess:
             self.db_name = db_name
         # get variables
             # TODO UNCOMMENT LOCALLY!
-            # self._get_variables(db_host, db_user, db_pw)
+            self._get_variables(db_host, db_user, db_pw)
 
     def get_updated_consultations(self, prev_comment_id):
         """
@@ -142,5 +142,6 @@ class PSQLDBAccess:
 
 if __name__ == "__main__":
     dba = PSQLDBAccess()
+    print dba.get_updated_consultations(328433)
     # for each in dba.get_consultation_ids_after():
     # print each, type(each)
