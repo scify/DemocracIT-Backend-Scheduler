@@ -32,13 +32,13 @@ class Scheduler:
     """Main scheduler implementation"""
     total = 0  # total controllers
     results = {}  # results of each module, if any
+    prev_comment_id = 0
 
     def __init__(self, log_file=None):
         # init storage
         self.psql = PSQLDBAccess()
         # init logger
         self.logger = DITLogger(filename=log_file if log_file else LOG_FILE)
-        self.prev_comment_id = 0
 
     def get_modules(self):
         # possibly read controllers dir and fetch a list of file names (except init)
@@ -56,12 +56,12 @@ class Scheduler:
         self.total = len(modules)
         # get previous comment ID
         if first:
-            self.prev_comment_id = 0
+            Scheduler.prev_comment_id = 0
         if not first:
-            self.prev_comment_id = self.psql.get_latest_comment_id()
+            Scheduler.prev_comment_id = self.psql.get_latest_comment_id()
         # log initialization
         self.logger.info("Initializing schedule for %d modules. "
-                         "Last commend_id: %d" % (self.total, self.prev_comment_id))
+                         "Last commend_id: %d" % (self.total, Scheduler.prev_comment_id))
         # execute pipeline
         for step, controller in modules.items():
             self._execute_controller(step, controller)
@@ -74,9 +74,13 @@ class Scheduler:
         self.logger.schedule_step(step_num=step, total_steps=self.total)
         # call controller
         result = controller.execute()
-        if result:
+        if result is not None:
             self.results[repr(controller)] = result
 
+
+    @staticmethod
+    def get_previous_comment_id():
+        return Scheduler.prev_comment_id
 
 class ControllerCrawl(Scheduler):
     def __init__(self, dir_name=None, java_exec=None, config_file=None):
@@ -96,14 +100,19 @@ class ControllerCrawl(Scheduler):
         try:
             # return [3451]
             # return [3451, 3452]
-            # cur_work_dir = os.getcwd()
-            # os.chdir(os.path.dirname(self.dir_name))
-            # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
-            # os.chdir(cur_work_dir)
+            cur_work_dir = os.getcwd()
+            os.chdir(os.path.dirname(self.dir_name))
+            subprocess.call(['java', '-jar', self.java_exec, self.config_file])
+            os.chdir(cur_work_dir)
             # return the consultations updated by the crawler
-            return self.psql.get_updated_consultations(self.prev_comment_id)
+            found = self.psql.get_updated_consultations(Scheduler.get_previous_comment_id())
+            if found:
+                return found
+            else:
+                return []
         except Exception, ex:
             self.logger.exception(ex)
+            return None
 
 
 class ControllerIndex(Scheduler):
@@ -120,7 +129,6 @@ class ControllerIndex(Scheduler):
         """
         for eachURL in self.urls:
             self.logger.info('executing import on %s table: calling %s' % (re.findall("dit_(\w+)", eachURL)[0], eachURL))
-            # try:
             try:
                 r = requests.get(eachURL)
                 response = r.status_code
@@ -147,15 +155,19 @@ class ControllerWordCloud(Scheduler):
         """
         if not self.consultations:
             consultations = self.results.get(repr(ControllerCrawl()))
-            if not consultations:  # if no crawler has run, then we must load all
+            if consultations is None:  # if no crawler has run, then we must load all
                 self.consultations = self.psql.get_updated_consultations(prev_comment_id=0)
                 self.logger.info(self.__repr__() + ": " + "No consultations passed: fetching all (%d total)" % len(
                     self.consultations))
             else:
                 self.consultations = consultations
-                self.logger.info('got %d consultations' % len(self.consultations))
+                # self.logger.info('got %d consultations' % len(self.consultations))
         # init procedure
         results = {}
+
+        if len(self.consultations) == 0:
+            return results
+
         # for each consultation
         for cons in self.consultations:
             # call extractor and keep result status code
@@ -171,12 +183,12 @@ class ControllerWordCloud(Scheduler):
         :param cons: a consultation ID
         :return the status_code response of the request
         """
-        # self.logger.info("Calling word cloud extractor for consultation %d" % cons)
-        self.logger.info("imitating Calling word cloud extractor for consultation %d" % cons)
+        self.logger.info("Calling word cloud extractor for consultation %d" % cons)
+        # self.logger.info("imitating Calling word cloud extractor for consultation %d" % cons)
         try:
-            # r = requests.get(self.url + "?consultation_id=%d" % cons)
-            # return r.status_code
-            return 200
+            r = requests.get(self.url + "?consultation_id=%d" % cons)
+            return r.status_code
+            # return 200
         except Exception, ex:
             self.logger.exception(ex)
             return 503  # service unavailable

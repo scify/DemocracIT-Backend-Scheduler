@@ -32,8 +32,8 @@ class PSQLDBAccess:
         else:
             self.db_name = db_name
         # get variables
-            # TODO UNCOMMENT LOCALLY!
-            self._get_variables(db_host, db_user, db_pw)
+        # TODO UNCOMMENT LOCALLY!
+        # self._get_variables(db_host, db_user, db_pw)
 
     def get_updated_consultations(self, prev_comment_id):
         """
@@ -70,10 +70,10 @@ class PSQLDBAccess:
     def get_connection(self):
         con = None
         try:
-            con = psycopg2.connect(host=os.getenv("democracit_db_host", "democracit.caijkvjiftca.eu-west-1.rds.amazonaws.com"),
+            con = psycopg2.connect(host=os.getenv("democracit_db_host", self.db_host),
                                    dbname=self.db_name,
-                                   user=os.getenv("democracit_db_user", "democracit_backend"),
-                                   password=os.getenv("democracit_db_pw", "d3m0cr!!it"))
+                                   user=os.getenv("democracit_db_user", self.db_user),
+                                   password=os.getenv("democracit_db_pw", self.db_pw))
             return con
         except psycopg2.DatabaseError, e:
             if con:
@@ -142,6 +142,6 @@ class PSQLDBAccess:
 
 if __name__ == "__main__":
     dba = PSQLDBAccess()
-    print dba.get_updated_consultations(328433)
+    print dba.get_updated_consultations(328451)
     # for each in dba.get_consultation_ids_after():
     # print each, type(each)
