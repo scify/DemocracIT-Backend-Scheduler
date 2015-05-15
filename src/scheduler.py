@@ -179,6 +179,7 @@ class ControllerWordCloud(Scheduler):
         results = {}
 
         if len(self.consultations) == 0:
+            self.logger.info("No new consultations or no consultations updated with new comments!")
             return results
 
         # for each consultation
