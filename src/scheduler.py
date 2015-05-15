@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-
 __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 import subprocess
@@ -15,18 +14,28 @@ from psql_dbaccess import PSQLDBAccess
 from ditLogger import DITLogger
 
 
+## CRAWLER
 # CRAWL_DIR_NAME = "/home/gkioumis/Downloads/"
 CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
 CRAWL_CONFIG_FILE_PATH = CRAWL_DIR_NAME + "config.properties"
-CRAWLER_JAVA_NAME = "OpenGovCrawler.jar"
+CRAWLER_JAR_NAME = "OpenGovCrawler.jar"
+## SOLR
 SOLR_INDEX_URLS = \
     ["http://localhost:8983/solr/dit_consultations/dataimport?command=full-import&clean=true",
      "http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true",
      "http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true"]
 # SOLR_INDEX_URL = ["http://localhost:8983/solr/dataimport?command=delta-import"]  
 # currently cannot get delta-import to work
+## WORDCLOUD EXTRACTOR
 WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
+## FEK ANNOTATOR
+FEK_ANNO_DIR_NAME = "/home/ubuntu/annotator_extractor/"
+FEK_ANNO_CONFIG_FILE_PATH = FEK_ANNO_DIR_NAME + "config.properties"
+FEK_ANNO_JAR_NAME = "FekAnnotatorModule.jar"
+
+
 LOG_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/scheduler.log"
+
 
 class Scheduler:
     """Main scheduler implementation"""
@@ -43,11 +52,15 @@ class Scheduler:
     def get_modules(self):
         # possibly read controllers dir and fetch a list of file names (except init)
         # TODO: add more modules
+        # TODO: load modules from config file
         modules = {
-            1: ControllerCrawl(dir_name=CRAWL_DIR_NAME, java_exec=CRAWLER_JAVA_NAME,
+            1: ControllerCrawl(dir_name=CRAWL_DIR_NAME, java_exec=CRAWLER_JAR_NAME,
                                config_file=CRAWL_CONFIG_FILE_PATH),
             2: ControllerIndex(urls=SOLR_INDEX_URLS),
-            3: ControllerWordCloud(url=WORDCLOUD_URL)}
+            3: ControllerWordCloud(url=WORDCLOUD_URL),
+            4: ControllerFekAnnotator(dir_name=FEK_ANNO_DIR_NAME, java_exec=FEK_ANNO_JAR_NAME,
+                               config_file=FEK_ANNO_CONFIG_FILE_PATH)
+            }
         return modules
 
     def execute_pipeline(self, first=False):
@@ -77,10 +90,10 @@ class Scheduler:
         if result is not None:
             self.results[repr(controller)] = result
 
-
     @staticmethod
     def get_previous_comment_id():
         return Scheduler.prev_comment_id
+
 
 class ControllerCrawl(Scheduler):
     def __init__(self, dir_name=None, java_exec=None, config_file=None):
@@ -193,6 +206,30 @@ class ControllerWordCloud(Scheduler):
             self.logger.exception(ex)
             return 503  # service unavailable
 
+
+class ControllerFekAnnotator(Scheduler):
+    def __init__(self, dir_name=None, java_exec=None, config_file=None):
+        self.dir_name = dir_name
+        self.java_exec = java_exec
+        self.config_file = config_file
+        Scheduler.__init__(self)
+
+    def __repr__(self):
+        return "ControllerFekAnnotator"
+
+    def execute(self):
+        """
+        will initiate the annotator (os.subprocess).
+        :return None
+        """
+        try:
+            cur_work_dir = os.getcwd()
+            os.chdir(os.path.dirname(self.dir_name))
+            subprocess.call(['java', '-jar', self.java_exec, self.config_file])
+            os.chdir(cur_work_dir)
+        except Exception, ex:
+            self.logger.exception(ex)
+        return None
 
 if __name__ == "__main__":
     import sys
