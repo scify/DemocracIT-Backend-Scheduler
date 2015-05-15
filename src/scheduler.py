@@ -16,7 +16,7 @@ from ditLogger import DITLogger
 
 ## CRAWLER
 # CRAWL_DIR_NAME = "/home/gkioumis/Downloads/"
-CRAWL_DIR_NAME = "/home/ubuntu/crawler/"
+CRAWL_DIR_NAME = "/home/azureuser/crawler/"
 CRAWL_CONFIG_FILE_PATH = CRAWL_DIR_NAME + "config.properties"
 CRAWLER_JAR_NAME = "OpenGovCrawler.jar"
 ## SOLR
@@ -29,7 +29,7 @@ SOLR_INDEX_URLS = \
 ## WORDCLOUD EXTRACTOR
 WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
 ## FEK ANNOTATOR
-FEK_ANNO_DIR_NAME = "/home/ubuntu/annotator_extractor/"
+FEK_ANNO_DIR_NAME = "/home/azureuser/annotator_extractor/"
 FEK_ANNO_CONFIG_FILE_PATH = FEK_ANNO_DIR_NAME + "config.properties"
 FEK_ANNO_JAR_NAME = "FekAnnotatorModule.jar"
 
