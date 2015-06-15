@@ -1,0 +1,15 @@
+1: ControllerCrawl
+  dir_name:CRAWL_DIR_NAME
+  java_exec:CRAWLER_JAR_NAME
+  config_file:CRAWL_CONFIG_FILE_PATH
+2: ControllerIndex
+  urls:
+  "http://localhost:8983/solr/dit_consultations/dataimport?command=full-import&clean=true"
+    "http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true"
+    "http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true"
+3: ControllerWordCloud
+  url:WORDCLOUD_URL
+4: ControllerFekAnnotator
+  dir_name:FEK_ANNO_DIR_NAME
+  java_exec:FEK_ANNO_JAR_NAME
+  config_file:FEK_ANNO_CONFIG_FILE_PATH
