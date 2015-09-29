@@ -226,11 +226,19 @@ class ControllerFekAnnotator(Scheduler):
         try:
             cur_work_dir = os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
-            subprocess.call(['java', '-jar', self.java_exec, self.config_file])
+            # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
+            # find all dependencies
+            libs = subprocess.check_output(['find', '-iname', '*.jar'])
+            # os.chdir(path + 'lib/')
+            # libs += subprocess.check_output(['ls'])
+            CP = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
+            # call annotator extractor
+            subprocess.call(["java", "-cp", CP, "module.fek.annotator.ArticlesEntityFinder", os.path.join(os.getcwd(), "config.properties")])
             os.chdir(cur_work_dir)
         except Exception, ex:
             self.logger.exception(ex)
         return None
+
 
 if __name__ == "__main__":
     import sys
