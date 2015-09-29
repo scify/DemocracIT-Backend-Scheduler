@@ -7,6 +7,7 @@ import re
 import requests
 from psql_dbaccess import PSQLDBAccess
 from dit_logger import DITLogger
+import yaml, importlib
 
 __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
@@ -30,6 +31,10 @@ FEK_ANNO_CONFIG_FILE_PATH = FEK_ANNO_DIR_NAME + "config.properties"
 FEK_ANNO_JAR_NAME = "FekAnnotatorModule.jar"
 
 
+CLASS_LABEL = 'class'
+PACKAGE_LABEL = 'package'
+PARAM_LABEL = 'params'
+
 LOG_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/scheduler.log"
 
 
@@ -46,25 +51,38 @@ class Scheduler:
         # init logger
         self.logger = DITLogger(filename=log_file if log_file else LOG_FILE)
 
-    def get_modules(self):
-        # possibly read controllers dir and fetch a list of file names (except init)
-        # TODO: add more modules
-        # TODO: load modules from config file
-        modules = {
-            1: ControllerCrawl(dir_name=CRAWL_DIR_NAME, java_exec=CRAWLER_JAR_NAME,
-                               config_file=CRAWL_CONFIG_FILE_PATH),
-            2: ControllerIndex(urls=SOLR_INDEX_URLS),
-            3: ControllerWordCloud(url=WORDCLOUD_URL),
-            4: ControllerFekAnnotator(dir_name=FEK_ANNO_DIR_NAME, java_exec=FEK_ANNO_JAR_NAME,
-                               config_file=FEK_ANNO_CONFIG_FILE_PATH)
-            }
+    @staticmethod
+    def get_modules(schedules_file_path):
+        modules = {}
+        with open(schedules_file_path, 'r') as inp:
+            scheduler_settings = yaml.load(inp)
+            for index, setting in enumerate(scheduler_settings):
+                cl_set = setting[CLASS_LABEL]
+                pack_set = setting[PACKAGE_LABEL]
+                params_set = setting[PARAM_LABEL]
+                pack = importlib.import_module(pack_set)
+                cl = getattr(pack, cl_set)
+                modules[index + 1] = cl(**params_set)
+
+        # # possibly read controllers dir and fetch a list of file names (except init)
+        # # TODO: add more modules
+        # # TODO: load modules from config file
+        # modules = {
+        #     1: ControllerCrawl(dir_name=CRAWL_DIR_NAME, java_exec=CRAWLER_JAR_NAME,
+        #                        config_file=CRAWL_CONFIG_FILE_PATH),
+        #     2: ControllerIndex(urls=SOLR_INDEX_URLS),
+        #     3: ControllerWordCloud(url=WORDCLOUD_URL),
+        #     4: ControllerFekAnnotator(dir_name=FEK_ANNO_DIR_NAME, java_exec=FEK_ANNO_JAR_NAME,
+        #                        config_file=FEK_ANNO_CONFIG_FILE_PATH)
+        #     }
+        print [k for k in modules.values()]
         return modules
 
     def execute_pipeline(self, first=False):
         # mark started
         self.date_start = datetime.now()
         # get all modules
-        modules = self.get_modules()
+        modules = Scheduler.get_modules('../schedules.yaml')  # TODO: remove hardcoding
         self.total = len(modules)
         # get previous comment ID
         if first:
@@ -102,7 +120,7 @@ class ControllerCrawl(Scheduler):
         Scheduler.__init__(self)
 
     def __repr__(self):
-        return "ControllerCrawl"
+        return "ControllerCrawl: {}".format(self.__dict__)
 
     def execute(self):
         """
@@ -133,7 +151,7 @@ class ControllerIndex(Scheduler):
         Scheduler.__init__(self)
 
     def __repr__(self):
-        return "ControllerIndex"
+        return "ControllerIndex: {}".format(self.__dict__)
 
     def execute(self):
         """
@@ -159,7 +177,7 @@ class ControllerWordCloud(Scheduler):
         Scheduler.__init__(self)
 
     def __repr__(self):
-        return "ControllerWordCloud"
+        return "ControllerWordCloud: {}".format(self.__dict__)
 
     def execute(self):
         """
@@ -215,7 +233,7 @@ class ControllerFekAnnotator(Scheduler):
         Scheduler.__init__(self)
 
     def __repr__(self):
-        return "ControllerFekAnnotator"
+        return "ControllerFekAnnotator: {}".format(self.__dict__)
 
     def execute(self):
         """

@@ -1,15 +1,23 @@
-1: ControllerCrawl
-  dir_name:CRAWL_DIR_NAME
-  java_exec:CRAWLER_JAR_NAME
-  config_file:CRAWL_CONFIG_FILE_PATH
-2: ControllerIndex
-  urls:
-  "http://localhost:8983/solr/dit_consultations/dataimport?command=full-import&clean=true"
-    "http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true"
-    "http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true"
-3: ControllerWordCloud
-  url:WORDCLOUD_URL
-4: ControllerFekAnnotator
-  dir_name:FEK_ANNO_DIR_NAME
-  java_exec:FEK_ANNO_JAR_NAME
-  config_file:FEK_ANNO_CONFIG_FILE_PATH
+- package: src.scheduler
+  class: ControllerCrawl
+  params:
+    dir_name: /home/azureuser/crawler/
+    java_exec: OpenGovCrawler.jar
+    config_file: /home/azureuser/crawler/config.properties
+- package: src.scheduler
+  class: ControllerIndex
+  params:
+    urls:
+        - http://localhost:8983/solr/dit_consultations/dataimport?command=full-import&clean=true
+        - http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true
+        - http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true
+- package: src.scheduler
+  class: ControllerWordCloud
+  params:
+    url: http://localhost:28084/WordCloud/Extractor
+- package: src.scheduler
+  class: ControllerFekAnnotator
+  params:
+    dir_name: /home/azureuser/annotator_extractor/
+    java_exec: FekAnnotatorModule.jar
+    config_file: /home/azureuser/annotator_extractor/config.properties
