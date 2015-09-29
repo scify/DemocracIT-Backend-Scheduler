@@ -45,14 +45,17 @@ class DITLogger:
             schedule = Schedule(1, total_steps, init_time_repr)
             self.info('initiated new %s' % schedule)
 
-        def schedule_step(self, step_num, total_steps, date_end=None):
+        def schedule_step(self, step_num, total_steps, date_start=None, date_end=None):
             """
             log schedule step up
             """
             if step_num == 1:
                 return self._schedule_initialized(total_steps)
             # else proceed
-            init_time_repr = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            if not date_start:
+                init_time_repr = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            else:
+                init_time_repr = datetime.strftime(date_start, '%Y-%m-%d %H:%M:%S')
             if not date_end:
                 schedule = Schedule(step_num, total_steps, init_time_repr)
                 self.info('step up %s' % schedule)

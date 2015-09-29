@@ -1,18 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from datetime import datetime
-
-__author__ = 'George K. <gkiom@iit.demokritos.gr>'
-
 import subprocess
 import os
 import re
-
 import requests
-
 from psql_dbaccess import PSQLDBAccess
-from ditLogger import DITLogger
+from dit_logger import DITLogger
 
+__author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
 ## CRAWLER
 # CRAWL_DIR_NAME = "/home/gkioumis/Downloads/"
@@ -42,6 +38,7 @@ class Scheduler:
     total = 0  # total controllers
     results = {}  # results of each module, if any
     prev_comment_id = 0
+    date_start = 0
 
     def __init__(self, log_file=None):
         # init storage
@@ -64,6 +61,8 @@ class Scheduler:
         return modules
 
     def execute_pipeline(self, first=False):
+        # mark started
+        self.date_start = datetime.now()
         # get all modules
         modules = self.get_modules()
         self.total = len(modules)
@@ -80,11 +79,11 @@ class Scheduler:
             self._execute_controller(step, controller)
 
         # finalized
-        self.logger.schedule_step(step_num=step, total_steps=self.total, date_end=datetime.now())
+        self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start, date_end=datetime.now())
 
     def _execute_controller(self, step, controller):
         # log step
-        self.logger.schedule_step(step_num=step, total_steps=self.total)
+        self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start)
         # call controller
         result = controller.execute()
         if result is not None:
@@ -233,7 +232,9 @@ class ControllerFekAnnotator(Scheduler):
             # libs += subprocess.check_output(['ls'])
             CP = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
             # call annotator extractor
-            subprocess.call(["java", "-cp", CP, "module.fek.annotator.ArticlesEntityFinder", os.path.join(os.getcwd(), "config.properties")])
+            # subprocess.call(["java", "-cp", CP, "module.fek.annotator.ArticlesEntityFinder", \
+            # os.path.join(os.getcwd(), "config.properties")])
+            subprocess.call(["java", "-cp", CP, "module.fek.annotator.ArticlesEntityFinder", self.config_file])
             os.chdir(cur_work_dir)
         except Exception, ex:
             self.logger.exception(ex)
