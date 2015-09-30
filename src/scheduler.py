@@ -259,7 +259,7 @@ if __name__ == "__main__":
     try:
         argv = FLAGS(sys.argv)
     except gflags.FlagsError as e:
-        print('%s\\nUsage: %s ARGS\\n%s' % (e, argv[0], FLAGS))
+        print('%s\\nUsage: %s ARGS\\n%s' % (e, sys.argv[0], FLAGS))
         sys.exit(1)
 
     scheduler = Scheduler(log_file=FLAGS.log_file, schedules=FLAGS.schedules)
