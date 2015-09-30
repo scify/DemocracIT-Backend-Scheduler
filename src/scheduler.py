@@ -11,26 +11,6 @@ import yaml, importlib
 
 __author__ = 'George K. <gkiom@iit.demokritos.gr>'
 
-## CRAWLER
-# CRAWL_DIR_NAME = "/home/gkioumis/Downloads/"
-CRAWL_DIR_NAME = "/home/azureuser/crawler/"
-CRAWL_CONFIG_FILE_PATH = CRAWL_DIR_NAME + "config.properties"
-CRAWLER_JAR_NAME = "OpenGovCrawler.jar"
-## SOLR
-SOLR_INDEX_URLS = \
-    ["http://localhost:8983/solr/dit_consultations/dataimport?command=full-import&clean=true",
-     "http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true",
-     "http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true"]
-# SOLR_INDEX_URL = ["http://localhost:8983/solr/dataimport?command=delta-import"]  
-# currently cannot get delta-import to work
-## WORDCLOUD EXTRACTOR
-WORDCLOUD_URL = "http://localhost:28084/WordCloud/Extractor"
-## FEK ANNOTATOR
-FEK_ANNO_DIR_NAME = "/home/azureuser/annotator_extractor/"
-FEK_ANNO_CONFIG_FILE_PATH = FEK_ANNO_DIR_NAME + "config.properties"
-FEK_ANNO_JAR_NAME = "FekAnnotatorModule.jar"
-
-
 CLASS_LABEL = 'class'
 PACKAGE_LABEL = 'package'
 PARAM_LABEL = 'params'
@@ -45,11 +25,13 @@ class Scheduler:
     prev_comment_id = 0
     date_start = 0
 
-    def __init__(self, log_file=None):
+    def __init__(self, log_file=None, schedules=None):
         # init storage
         self.psql = PSQLDBAccess()
         # init logger
         self.logger = DITLogger(filename=log_file if log_file else LOG_FILE)
+        # schedules file
+        self.schedule_settings_file = schedules
 
     @staticmethod
     def get_modules(schedules_file_path):
@@ -63,18 +45,6 @@ class Scheduler:
                 pack = importlib.import_module(pack_set)
                 cl = getattr(pack, cl_set)
                 modules[index + 1] = cl(**params_set)
-
-        # # possibly read controllers dir and fetch a list of file names (except init)
-        # # TODO: add more modules
-        # # TODO: load modules from config file
-        # modules = {
-        #     1: ControllerCrawl(dir_name=CRAWL_DIR_NAME, java_exec=CRAWLER_JAR_NAME,
-        #                        config_file=CRAWL_CONFIG_FILE_PATH),
-        #     2: ControllerIndex(urls=SOLR_INDEX_URLS),
-        #     3: ControllerWordCloud(url=WORDCLOUD_URL),
-        #     4: ControllerFekAnnotator(dir_name=FEK_ANNO_DIR_NAME, java_exec=FEK_ANNO_JAR_NAME,
-        #                        config_file=FEK_ANNO_CONFIG_FILE_PATH)
-        #     }
         print [k for k in modules.values()]
         return modules
 
@@ -82,7 +52,7 @@ class Scheduler:
         # mark started
         self.date_start = datetime.now()
         # get all modules
-        modules = Scheduler.get_modules('../schedules.yaml')  # TODO: remove hardcoding
+        modules = Scheduler.get_modules(self.schedule_settings_file)
         self.total = len(modules)
         # get previous comment ID
         if first:
@@ -226,9 +196,10 @@ class ControllerWordCloud(Scheduler):
 
 
 class ControllerFekAnnotator(Scheduler):
-    def __init__(self, dir_name=None, java_exec=None, config_file=None):
+    def __init__(self, dir_name=None, java_exec=None, executable_class=None, config_file=None):
         self.dir_name = dir_name
         self.java_exec = java_exec
+        self.executable_class = executable_class
         self.config_file = config_file
         Scheduler.__init__(self)
 
@@ -237,7 +208,7 @@ class ControllerFekAnnotator(Scheduler):
 
     def execute(self):
         """
-        will initiate the annotator (os.subprocess).
+        will initiate the annotator (os.subprocess)
         :return None
         """
         try:
@@ -246,13 +217,9 @@ class ControllerFekAnnotator(Scheduler):
             # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             # find all dependencies
             libs = subprocess.check_output(['find', '-iname', '*.jar'])
-            # os.chdir(path + 'lib/')
-            # libs += subprocess.check_output(['ls'])
-            CP = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
+            class_path = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
             # call annotator extractor
-            # subprocess.call(["java", "-cp", CP, "module.fek.annotator.ArticlesEntityFinder", \
-            # os.path.join(os.getcwd(), "config.properties")])
-            subprocess.call(["java", "-cp", CP, "module.fek.annotator.ArticlesEntityFinder", self.config_file])
+            subprocess.call(["java", "-cp", class_path, self.executable_class, self.config_file])
             os.chdir(cur_work_dir)
         except Exception, ex:
             self.logger.exception(ex)
@@ -263,13 +230,11 @@ if __name__ == "__main__":
     import sys
     import gflags
 
-    gflags.DEFINE_string('log_file',
-                     LOG_FILE,
-                     'The file to log.')
+    gflags.DEFINE_string('log_file', LOG_FILE, 'The file to log.')
 
-    gflags.DEFINE_bool('first_run',
-                     False,
-                     'use this if running for first time.')
+    gflags.DEFINE_string('schedules', "../schedules.yaml", 'the settings file to load')
+
+    gflags.DEFINE_bool('first_run', False, 'use this if running for first time.')
 
     FLAGS = gflags.FLAGS
 
@@ -279,6 +244,6 @@ if __name__ == "__main__":
         print('%s\\nUsage: %s ARGS\\n%s' % (e, argv[0], FLAGS))
         sys.exit(1)
 
-    scheduler = Scheduler(log_file=FLAGS.log_file)
+    scheduler = Scheduler(log_file=FLAGS.log_file, schedules=FLAGS.schedules)
     scheduler.execute_pipeline(first=FLAGS.first_run)
 
