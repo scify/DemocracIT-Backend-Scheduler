@@ -18,7 +18,7 @@ CLASS_LABEL = 'class'
 PACKAGE_LABEL = 'package'
 PARAM_LABEL = 'params'
 
-LOG_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/scheduler.log"
+DEFAULT_LOG_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/scheduler.log"
 
 
 class Scheduler:
@@ -32,26 +32,14 @@ class Scheduler:
         # init storage
         self.psql = PSQLDBAccess()
         # init logger
-        self.logger = DITLogger(filename=log_file if log_file else LOG_FILE)
+        self.logger = DITLogger(filename=log_file if log_file else DEFAULT_LOG_FILE)
         # schedules file
         self.schedule_settings_file = schedules
 
-    @staticmethod
-    def get_modules(schedules_file_path):
-        modules = {}
-        with open(schedules_file_path, 'r') as inp:
-            scheduler_settings = yaml.load(inp)
-            for index, setting in enumerate(scheduler_settings):
-                cl_set = setting[CLASS_LABEL]
-                pack_set = setting[PACKAGE_LABEL]
-                params_set = setting[PARAM_LABEL]
-                pack = importlib.import_module(pack_set)
-                cl = getattr(pack, cl_set)
-                modules[index + 1] = cl(**params_set)
-        print [k for k in modules.values()]
-        return modules
-
     def execute_pipeline(self, first=False):
+        """
+        Execute the schedule, as stated in the yaml file
+        """
         # mark started
         self.date_start = datetime.now()
         # get all modules
@@ -73,6 +61,9 @@ class Scheduler:
         self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start, date_end=datetime.now())
 
     def _execute_controller(self, step, controller):
+        """
+        Execute the controller passed, and if this controller returns smth, store it
+        """
         # log step
         self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start)
         # call controller
@@ -83,6 +74,26 @@ class Scheduler:
     @staticmethod
     def get_previous_comment_id():
         return Scheduler.prev_comment_id
+
+    @staticmethod
+    def get_modules(schedules_file_path):
+        """
+        :param schedules_file_path: the path to the yaml file
+        :return: a dict containing the instances to be executed
+        """
+        modules = {}
+        # inject class instances, with parameters from settings file
+        with open(schedules_file_path, 'r') as inp:
+            scheduler_settings = yaml.load(inp)
+            for index, setting in enumerate(scheduler_settings):
+                cl_set = setting[CLASS_LABEL]
+                pack_set = setting[PACKAGE_LABEL]
+                params_set = setting[PARAM_LABEL]
+                pack = importlib.import_module(pack_set)
+                cl = getattr(pack, cl_set)
+                modules[index + 1] = cl(**params_set)
+        print [k for k in modules.values()]  # debug
+        return modules
 
 
 class ControllerCrawl(Scheduler):
@@ -232,7 +243,7 @@ if __name__ == "__main__":
     import sys
     import gflags
 
-    gflags.DEFINE_string('log_file', LOG_FILE, 'The file to log.')
+    gflags.DEFINE_string('log_file', DEFAULT_LOG_FILE, 'The file to log.')
 
     gflags.DEFINE_string('schedules', "../schedules.yaml", 'the settings file to load')
 
