@@ -1,3 +1,6 @@
+logging==0.4.9.6
 SQLAlchemy==0.9.8
+importlib==1.0.3
 psycopg2==2.6
+PyYAML==3.11
 requests==2.5.3

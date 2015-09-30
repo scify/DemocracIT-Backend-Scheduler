@@ -4,12 +4,15 @@ from datetime import datetime
 import subprocess
 import os
 import re
+import importlib
+
 import requests
+import yaml
+
 from psql_dbaccess import PSQLDBAccess
 from dit_logger import DITLogger
-import yaml, importlib
 
-__author__ = 'George K. <gkiom@iit.demokritos.gr>'
+__author__ = 'George K. <gkiom@scify.org>'
 
 CLASS_LABEL = 'class'
 PACKAGE_LABEL = 'package'
@@ -22,8 +25,8 @@ class Scheduler:
     """Main scheduler implementation"""
     total = 0  # total controllers
     results = {}  # results of each module, if any
-    prev_comment_id = 0
-    date_start = 0
+    prev_comment_id = 0  # comment ID from previous schedule
+    date_start = 0  # start date of schedule
 
     def __init__(self, log_file=None, schedules=None):
         # init storage
@@ -98,8 +101,8 @@ class ControllerCrawl(Scheduler):
         :return the list of consultations updated with new comments
         """
         try:
-            # return [3451]
-            # return [3451, 3452]
+            # return [3451]  # test
+            # return [3451, 3452]  # test
             cur_work_dir = os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
             subprocess.call(['java', '-jar', self.java_exec, self.config_file])
@@ -117,24 +120,25 @@ class ControllerCrawl(Scheduler):
 
 class ControllerIndex(Scheduler):
     def __init__(self, urls=None):
-        self.urls = urls if urls else ["http://localhost:8983/solr/dit_comments/etc"]
+        self.urls = urls if urls else ["http://localhost/solr/dit_comments/etc"]  # just an example, urls MUST exist
         Scheduler.__init__(self)
-
-    def __repr__(self):
-        return "ControllerIndex: {}".format(self.__dict__)
 
     def execute(self):
         """
         :return: None
         """
         for eachURL in self.urls:
-            self.logger.info('executing import on %s table: calling %s' % (re.findall("dit_(\w+)", eachURL)[0], eachURL))
+            self.logger.info('executing import on %s table: calling %s'
+                             % (re.findall('dit_(\w+)', eachURL)[0], eachURL))
             try:
                 r = requests.get(eachURL)
                 response = r.status_code
                 self.logger.info("import completed with response code: %d " % response)
             except Exception, ex:
                 self.logger.exception(ex)
+
+    def __repr__(self):
+        return "ControllerIndex: {}".format(self.__dict__)
 
 
 class ControllerWordCloud(Scheduler):
@@ -146,9 +150,6 @@ class ControllerWordCloud(Scheduler):
             self.consultations = consultations
         Scheduler.__init__(self)
 
-    def __repr__(self):
-        return "ControllerWordCloud: {}".format(self.__dict__)
-
     def execute(self):
         """
         :return: None
@@ -157,8 +158,8 @@ class ControllerWordCloud(Scheduler):
             consultations = self.results.get(repr(ControllerCrawl()))
             if consultations is None:  # if no crawler has run, then we must load all
                 self.consultations = self.psql.get_updated_consultations(prev_comment_id=0)
-                self.logger.info(self.__repr__() + ": " + "No consultations passed: fetching all (%d total)" % len(
-                    self.consultations))
+                self.logger.info(self.__repr__() + ": " + "No consultations passed: fetching all (%d total)"
+                                 % len(self.consultations))
             else:
                 self.consultations = consultations
                 # self.logger.info('got %d consultations' % len(self.consultations))
@@ -194,6 +195,9 @@ class ControllerWordCloud(Scheduler):
             self.logger.exception(ex)
             return 503  # service unavailable
 
+    def __repr__(self):
+        return "ControllerWordCloud: {}".format(self.__dict__)
+
 
 class ControllerFekAnnotator(Scheduler):
     def __init__(self, dir_name=None, java_exec=None, executable_class=None, config_file=None):
@@ -203,9 +207,6 @@ class ControllerFekAnnotator(Scheduler):
         self.config_file = config_file
         Scheduler.__init__(self)
 
-    def __repr__(self):
-        return "ControllerFekAnnotator: {}".format(self.__dict__)
-
     def execute(self):
         """
         will initiate the annotator (os.subprocess)
@@ -214,7 +215,6 @@ class ControllerFekAnnotator(Scheduler):
         try:
             cur_work_dir = os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
-            # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             # find all dependencies
             libs = subprocess.check_output(['find', '-iname', '*.jar'])
             class_path = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
@@ -225,6 +225,8 @@ class ControllerFekAnnotator(Scheduler):
             self.logger.exception(ex)
         return None
 
+    def __repr__(self):
+        return "ControllerFekAnnotator: {}".format(self.__dict__)
 
 if __name__ == "__main__":
     import sys

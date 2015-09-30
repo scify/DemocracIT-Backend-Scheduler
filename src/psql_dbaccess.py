@@ -11,13 +11,12 @@ sudo pip install psycopg2
     sudo pip install psycopg2
 """
 
-__author__ = 'George K. <gkiom@iit.demokritos.gr>'
-
 import sys
 import os
 import traceback
-
 import psycopg2
+
+__author__ = 'George K. <gkiom@scify.org>'
 
 
 class PSQLDBAccess:
@@ -32,7 +31,7 @@ class PSQLDBAccess:
         else:
             self.db_name = db_name
         # get variables
-        # TODO UNCOMMENT LOCALLY!
+        # UNCOMMENT LOCALLY!
         # self._get_variables(db_host, db_user, db_pw)
 
     def get_updated_consultations(self, prev_comment_id):
@@ -86,8 +85,7 @@ class PSQLDBAccess:
         get the variables, if none, from file (backup)
         file lines must be in the order of db_host, db_user, db_pw - it's silly, i know:-)
         """
-        # backup (pycharm no see getenv)
-        # read from file (TODO add settings file to gitignore)
+        # backup method to load credentials
         try:
             with open("../settings.properties", 'r') as f:
                 settings = f.readlines()
@@ -106,7 +104,6 @@ class PSQLDBAccess:
                 self.db_pw = db_pw
         except Exception, e:
             print 'Exception: %s :\n %s' % (e, traceback.format_exc())
-
 
     def _get_consultation_ids_after(self, prev_comment_id):
         """
@@ -142,6 +139,6 @@ class PSQLDBAccess:
 
 if __name__ == "__main__":
     dba = PSQLDBAccess()
+    # test
     print dba.get_updated_consultations(328451)
-    # for each in dba.get_consultation_ids_after():
-    # print each, type(each)
+

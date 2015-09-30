@@ -3,15 +3,19 @@
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 
-__author__ = 'George K. <gkiom@scify.org>'
-
 from models import Schedule, Base
 
 import sqlite3
 from datetime import datetime
 import traceback
 
+__author__ = 'George K. <gkiom@scify.org>'
+
+
 class LocalDBAccess:
+    """
+    @deprecated
+    """
     db_name = ""
 
     def __init__(self, db_name=None):
