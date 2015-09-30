@@ -35,5 +35,3 @@
     dir_name: /home/azureuser/annotator_extractor/
     java_exec: FekAnnotatorModule.jar
     executable_class: module.entities.NameFinder.RegexNameFinder
-    config_file: /home/azureuser/annotator_extractor/config.properties
-

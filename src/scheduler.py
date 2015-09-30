@@ -42,14 +42,16 @@ class Scheduler:
         """
         # mark started
         self.date_start = datetime.now()
-        # get all modules
+        # get all modules to execute
         modules = Scheduler.get_modules(self.schedule_settings_file)
         self.total = len(modules)
         # get previous comment ID
-        if first:
-            Scheduler.prev_comment_id = 0
         if not first:
             Scheduler.prev_comment_id = self.psql.get_latest_comment_id()
+            # DEBUG: Comment!
+            # Scheduler.prev_comment_id = 386106
+        else:
+            Scheduler.prev_comment_id = 0
         # log initialization
         self.logger.info("Initializing schedule for %d modules. "
                          "Last commend_id: %d" % (self.total, Scheduler.prev_comment_id))
@@ -92,7 +94,7 @@ class Scheduler:
                 pack = importlib.import_module(pack_set)
                 cl = getattr(pack, cl_set)
                 modules[index + 1] = cl(**params_set)
-        print [k for k in modules.values()]  # debug
+        # print [k for k in modules.values()]  # debug
         return modules
 
 
@@ -112,8 +114,8 @@ class ControllerCrawl(Scheduler):
         :return the list of consultations updated with new comments
         """
         try:
-            # return [3451]  # test
-            # return [3451, 3452]  # test
+            # return [3451]  # debug
+            # return [3451, 3452]  # debug
             cur_work_dir = os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
             subprocess.call(['java', '-jar', self.java_exec, self.config_file])
@@ -211,7 +213,7 @@ class ControllerWordCloud(Scheduler):
 
 
 class ControllerFekAnnotator(Scheduler):
-    def __init__(self, dir_name=None, java_exec=None, executable_class=None, config_file=None):
+    def __init__(self, dir_name, java_exec, executable_class, config_file=None):
         self.dir_name = dir_name
         self.java_exec = java_exec
         self.executable_class = executable_class
@@ -230,7 +232,10 @@ class ControllerFekAnnotator(Scheduler):
             libs = subprocess.check_output(['find', '-iname', '*.jar'])
             class_path = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
             # call annotator extractor
-            subprocess.call(["java", "-cp", class_path, self.executable_class, self.config_file])
+            if self.config_file:
+                subprocess.call(["java", "-cp", class_path, self.executable_class, self.config_file])
+            else:
+                subprocess.call(["java", "-cp", class_path, self.executable_class])
             os.chdir(cur_work_dir)
         except Exception, ex:
             self.logger.exception(ex)
