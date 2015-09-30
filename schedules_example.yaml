@@ -1,0 +1,37 @@
+- package: scheduler
+  class: ControllerCrawl
+  params:
+    dir_name: ~/crawler/
+    java_exec: OpenGovCrawler.jar
+    config_file: ~/crawler/config.properties
+- package: scheduler
+  class: ControllerIndex
+  params:
+    urls:
+        - http://localhost:8983/solr/dit_consultations/dataimport?command=full-import&clean=true
+        - http://localhost:8983/solr/dit_articles/dataimport?command=full-import&clean=true
+        - http://localhost:8983/solr/dit_comments/dataimport?command=full-import&clean=true
+- package: scheduler
+  class: ControllerWordCloud
+  params:
+    url: http://localhost:28084/WordCloud/Extractor
+- package: scheduler
+  class: ControllerFekAnnotator
+  params:
+    dir_name: ~/annotator_extractor/
+    java_exec: FekAnnotatorModule.jar
+    executable_class: module.fek.annotator.ArticlesEntityFinder
+    config_file: ~/annotator_extractor/config.properties
+- package: scheduler
+  class: ControllerFekAnnotator
+  params:
+    dir_name: ~/annotator_extractor/
+    java_exec: FekAnnotatorModule.jar
+    executable_class: module.entities.UsernameChecker.CheckOpengovUsernames
+    config_file: ~/annotator_extractor/config.properties
+- package: scheduler
+  class: ControllerFekAnnotator
+  params:
+    dir_name: ~/annotator_extractor/
+    java_exec: FekAnnotatorModule.jar
+    executable_class: module.entities.NameFinder.RegexNameFinder
