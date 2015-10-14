@@ -70,8 +70,8 @@ class Scheduler:
         self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start)
         # call controller
         result = controller.execute()
-        if result is not None:
-            self.results[repr(controller)] = result
+        if result:
+            self.results[repr(controller).split(":")[0]] = result
 
     @staticmethod
     def get_previous_comment_id():
@@ -174,7 +174,7 @@ class ControllerWordCloud(Scheduler):
         :return: None
         """
         if not self.consultations:
-            consultations = self.results.get(repr(ControllerCrawl()))
+            consultations = self.results.get("ControllerCrawl")
             if consultations is None:  # if no crawler has run, then we must load all
                 self.consultations = self.psql.get_updated_consultations(prev_comment_id=0)
                 self.logger.info(self.__repr__() + ": " + "No consultations passed: fetching all (%d total)"
