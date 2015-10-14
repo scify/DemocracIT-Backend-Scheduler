@@ -99,9 +99,10 @@ class Scheduler:
 
 
 class ControllerCrawl(Scheduler):
-    def __init__(self, dir_name=None, java_exec=None, config_file=None):
+    def __init__(self, dir_name, java_exec, executable_class, config_file):
         self.dir_name = dir_name
         self.java_exec = java_exec
+        self.executable_class = executable_class
         self.config_file = config_file
         Scheduler.__init__(self)
 
@@ -114,14 +115,19 @@ class ControllerCrawl(Scheduler):
         :return the list of consultations updated with new comments
         """
         try:
-            # return [3451]  # debug
             # return [3451, 3452]  # debug
+            # os.chdir(os.path.dirname(self.dir_name))
+            # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             cur_work_dir = os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
-            subprocess.call(['java', '-jar', self.java_exec, self.config_file])
-            os.chdir(cur_work_dir)
+            # find all dependencies
+            libs = subprocess.check_output(['find', '-iname', '*.jar'])
+            class_path = ":".join([os.path.join(os.getcwd(), k) for k in libs.split() if k.endswith('.jar')])
+            # start crawler
+            subprocess.call(["java", "-cp", class_path, self.executable_class, self.config_file])
             # return the consultations updated by the crawler
             found = self.psql.get_updated_consultations(Scheduler.get_previous_comment_id())
+            os.chdir(cur_work_dir)
             if found:
                 return found
             else:
