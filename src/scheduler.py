@@ -163,10 +163,11 @@ class ControllerIndex(Scheduler):
 class ControllerWordCloud(Scheduler):
     consultations = set()
 
-    def __init__(self, url, consultations=None):
+    def __init__(self, url, consultations=None, fetchall=False):
         self.url = url
         if consultations:
             self.consultations = consultations
+        self.fetch_all_consultations = fetchall
         Scheduler.__init__(self)
 
     def execute(self):
@@ -175,10 +176,12 @@ class ControllerWordCloud(Scheduler):
         """
         if not self.consultations:
             consultations = self.results.get("ControllerCrawl")
-            if consultations is None:  # if no crawler has run, then we must load all
-                self.consultations = self.psql.get_updated_consultations(prev_comment_id=0)
-                self.logger.info(self.__repr__() + ": " + "No consultations passed: fetching all (%d total)"
-                                 % len(self.consultations))
+            if not consultations:
+                if self.fetch_all_consultations:
+                    # if no crawler has run, then we must load all
+                    self.consultations = self.psql.get_updated_consultations(prev_comment_id=0)
+                    self.logger.info(self.__str__() + ": " + "No consultations passed: fetching all (%d total)"
+                                     % len(self.consultations))
             else:
                 self.consultations = consultations
                 # self.logger.info('got %d consultations' % len(self.consultations))
@@ -186,7 +189,7 @@ class ControllerWordCloud(Scheduler):
         results = {}
 
         if len(self.consultations) == 0:
-            self.logger.info("No new consultations or no consultations updated with new comments!")
+            self.logger.info("No new consultations, or no consultations updated with new comments!")
             return results
 
         # for each consultation
@@ -217,6 +220,9 @@ class ControllerWordCloud(Scheduler):
     def __repr__(self):
         return "ControllerWordCloud: {}".format(self.__dict__)
 
+
+    def __str__(self):
+        return 'ControllerWordCloud'
 
 class ControllerFekAnnotator(Scheduler):
     def __init__(self, dir_name, java_exec, executable_class, config_file=None):
