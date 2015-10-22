@@ -70,8 +70,15 @@ class LocalDBAccess:
             # get a cursor
             cur = con.cursor()
             # query db (get latest comment ID)
-            cur.execute("SELECT last_comment_id FROM comment_ids LIMIT 1;")
-            print cur.fetchone()
+            cur.execute\
+                ("""
+                CREATE TABLE IF NOT EXISTS schedules(
+                   id INTEGER PRIMARY KEY   AUTOINCREMENT,
+                   start           LONG      NOT NULL,
+                   end            LONG       NULL
+                );""")
+            init_time_repr = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            cur.execute("INSERT INTO schedules start VALUES(%d)", (init_time_repr,))
         except SQLAlchemyError, e:
             if con:
                 con.rollback()

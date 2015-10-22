@@ -49,7 +49,7 @@ class Scheduler:
         if not first:
             Scheduler.prev_comment_id = self.psql.get_latest_comment_id()
             # DEBUG: Comment!
-            # Scheduler.prev_comment_id = 386106
+            # Scheduler.prev_comment_id = 387627
         else:
             Scheduler.prev_comment_id = 0
         # log initialization
@@ -68,8 +68,7 @@ class Scheduler:
         """
         # log step
         self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start)
-        # call controller
-        result = controller.execute()
+        result = controller.execute(self.results.get('ControllerCrawl'))  # applied custom hack to pass consultations to wordcloud
         if result:
             self.results[repr(controller).split(":")[0]] = result
 
@@ -109,15 +108,12 @@ class ControllerCrawl(Scheduler):
     def __repr__(self):
         return "ControllerCrawl: {}".format(self.__dict__)
 
-    def execute(self):
+    def execute(self, incoming):
         """
         will initiate the crawler (os.subprocess).
         :return the list of consultations updated with new comments
         """
         try:
-            # return [3451, 3452]  # debug
-            # os.chdir(os.path.dirname(self.dir_name))
-            # subprocess.call(['java', '-jar', self.java_exec, self.config_file])
             cur_work_dir = os.getcwd()
             os.chdir(os.path.dirname(self.dir_name))
             # find all dependencies
@@ -142,7 +138,7 @@ class ControllerIndex(Scheduler):
         self.urls = urls if urls else ["http://localhost/solr/dit_comments/etc"]  # just an example, urls MUST exist
         Scheduler.__init__(self)
 
-    def execute(self):
+    def execute(self, incoming):
         """
         :return: None
         """
@@ -170,12 +166,13 @@ class ControllerWordCloud(Scheduler):
         self.fetch_all_consultations = fetchall
         Scheduler.__init__(self)
 
-    def execute(self):
+    def execute(self, incoming):
         """
         :return: None
         """
         if not self.consultations:
-            consultations = self.results.get("ControllerCrawl")
+            if incoming:
+                consultations = incoming
             if not consultations:
                 if self.fetch_all_consultations:
                     # if no crawler has run, then we must load all
@@ -220,9 +217,9 @@ class ControllerWordCloud(Scheduler):
     def __repr__(self):
         return "ControllerWordCloud: {}".format(self.__dict__)
 
-
     def __str__(self):
         return 'ControllerWordCloud'
+
 
 class ControllerFekAnnotator(Scheduler):
     def __init__(self, dir_name, java_exec, executable_class, config_file=None):
@@ -232,7 +229,7 @@ class ControllerFekAnnotator(Scheduler):
         self.config_file = config_file
         Scheduler.__init__(self)
 
-    def execute(self):
+    def execute(self, incoming):
         """
         will initiate the annotator (os.subprocess)
         :return None
