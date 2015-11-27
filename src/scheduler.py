@@ -5,10 +5,9 @@ import subprocess
 import os
 import re
 import importlib
-
 import requests
 import yaml
-
+import json
 from psql_dbaccess import PSQLDBAccess
 from dit_logger import DITLogger
 
@@ -19,6 +18,7 @@ PACKAGE_LABEL = 'package'
 PARAM_LABEL = 'params'
 
 DEFAULT_LOG_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/scheduler.log"
+LOCAL_TEMP_FILE = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/tmp.json"
 
 
 class Scheduler:
@@ -39,6 +39,7 @@ class Scheduler:
     def execute_pipeline(self, first=False):
         """
         Execute the schedule, as stated in the yaml file
+        :param first: flag to define first execution
         """
         # mark started
         self.date_start = datetime.now()
@@ -47,20 +48,20 @@ class Scheduler:
         self.total = len(modules)
         # get previous comment ID
         if not first:
-            Scheduler.prev_comment_id = self.psql.get_latest_comment_id()
-            # DEBUG: Comment!
-            # Scheduler.prev_comment_id = 387627
+            self.prev_comment_id = self.psql.get_latest_comment_id()
         else:
-            Scheduler.prev_comment_id = 0
+            self.prev_comment_id = 0
+        self._store({"prev_comment_id": self.prev_comment_id}, LOCAL_TEMP_FILE)
         # log initialization
         self.logger.info("Initializing schedule for %d modules. "
-                         "Last commend_id: %d" % (self.total, Scheduler.prev_comment_id))
+                         "Last comment id: %d" % (self.total, self.prev_comment_id))
         # execute pipeline
         for step, controller in modules.items():
             self._execute_controller(step, controller)
 
         # finalized
-        self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start, date_end=datetime.now())
+        self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start,
+                                  date_end=datetime.now())
 
     def _execute_controller(self, step, controller):
         """
@@ -68,13 +69,14 @@ class Scheduler:
         """
         # log step
         self.logger.schedule_step(step_num=step, total_steps=self.total, date_start=self.date_start)
-        result = controller.execute(self.results.get('ControllerCrawl'))  # applied custom hack to pass consultations to wordcloud
+        result = controller.execute(
+            self.results.get('ControllerCrawl')
+        )  # applied custom hack to pass consultations to wordcloud
         if result:
             self.results[repr(controller).split(":")[0]] = result
 
-    @staticmethod
-    def get_previous_comment_id():
-        return Scheduler.prev_comment_id
+    def get_previous_comment_id(self):
+        return self._load(LOCAL_TEMP_FILE)["prev_comment_id"]
 
     @staticmethod
     def get_modules(schedules_file_path):
@@ -95,6 +97,29 @@ class Scheduler:
                 modules[index + 1] = cl(**params_set)
         # print [k for k in modules.values()]  # debug
         return modules
+
+    def _store(self, dict, storage):
+        """
+        store data to file: custom hack to override issue with class inheritance
+        :param storage: the file to store data
+        """
+        if not os.path.isfile(storage):
+            with open(storage, mode='a') as f:
+                json.dump(dict, f)
+        else:
+            with open(storage, mode='w') as f:
+                json.dump(dict, f)
+
+    def _load(self, storage):
+        """
+
+        :param storage:
+        """
+        if os.path.isfile(storage):
+            with open(storage, mode='r') as f:
+                return json.load(f)
+        # we do not want schedule to terminate
+        return {"prev_comment_id": 0}
 
 
 class ControllerCrawl(Scheduler):
@@ -122,12 +147,9 @@ class ControllerCrawl(Scheduler):
             # start crawler
             subprocess.call(["java", "-cp", class_path, self.executable_class, self.config_file])
             # return the consultations updated by the crawler
-            found = self.psql.get_updated_consultations(Scheduler.get_previous_comment_id())
+            found = self.psql.get_updated_consultations(self.get_previous_comment_id())
             os.chdir(cur_work_dir)
-            if found:
-                return found
-            else:
-                return []
+            return found if found else []
         except Exception, ex:
             self.logger.exception(ex)
             return None
@@ -172,19 +194,15 @@ class ControllerWordCloud(Scheduler):
         """
         if not self.consultations:
             if incoming:
-                consultations = incoming
-            if not consultations:
+                self.consultations = incoming
+            else:
                 if self.fetch_all_consultations:
                     # if no crawler has run, then we must load all
                     self.consultations = self.psql.get_updated_consultations(prev_comment_id=0)
                     self.logger.info(self.__str__() + ": " + "No consultations passed: fetching all (%d total)"
                                      % len(self.consultations))
-            else:
-                self.consultations = consultations
-                # self.logger.info('got %d consultations' % len(self.consultations))
         # init procedure
         results = {}
-
         if len(self.consultations) == 0:
             self.logger.info("No new consultations, or no consultations updated with new comments!")
             return results
@@ -253,6 +271,7 @@ class ControllerFekAnnotator(Scheduler):
     def __repr__(self):
         return "ControllerFekAnnotator: {}".format(self.__dict__)
 
+
 if __name__ == "__main__":
     import sys
     import gflags
@@ -273,4 +292,3 @@ if __name__ == "__main__":
 
     scheduler = Scheduler(log_file=FLAGS.log_file, schedules=FLAGS.schedules)
     scheduler.execute_pipeline(first=FLAGS.first_run)
-

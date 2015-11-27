@@ -91,5 +91,3 @@ class LocalDBAccess:
 if __name__ == "__main__":
     dba = LocalDBAccess()
     print dba._init_tables()
-    # for each in dba.get_latest_comment_id():
-    # print each, type(each)
